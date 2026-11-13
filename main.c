@@ -8,21 +8,60 @@ struct student {
 	char group[10];
 };
 
-int main()
+void data_input(struct student *data, int count)
 {
-	struct student s = {
-		.name = "John",
-		.last_name = "Doe",
-		.course = 1,
-		.group = "XYZ132"
-	};
+	int idx = 0;
+
+	while(count-- > 0) {
+		printf("Enter student data (%d) > ", idx);
+		scanf("%20s %20s %d %10s",
+			(data + idx)->name,
+			(data + idx)->last_name,
+			&(data + idx)->course,
+			(data + idx)->group
+		);
+		idx++;
+	}
+}
+
+void data_show(struct student *data, int count)
+{
+	int idx = 0;
 
 	printf( "Name                |"
 		"Last name           |"
 		"Course  |"
 		"Group\n");
-	printf("%-20s|%-20s|%-8d|%-10s\n",
-		s.name, s.last_name, s.course, s.group);
+
+	while(count-- > 0) {
+		printf("%-20s|%-20s|%-8d|%-10s\n",
+			(data + idx)->name,
+			(data + idx)->last_name,
+			(data + idx)->course,
+			(data + idx)->group
+		);
+		idx++;
+	}
+}
+
+int main()
+{
+	int count = 0;
+	struct student *s = NULL;
+
+	printf("Please give a number of students you want to enter > ");
+	scanf("%d", &count);
+
+	s = (struct student *)malloc(sizeof(struct student) * count);
+	if (!s) {
+		printf("memory allocation failed!\n");
+		return -1;
+	}
+
+	data_input(s, count);
+	data_show(s, count);
+
+	free(s);
 
 	return 0;
 }
