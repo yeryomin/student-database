@@ -76,6 +76,73 @@ exit:
 	return err;
 }
 
+int data_read(const char *file, struct student *data)
+{
+	int err = 0;
+	struct student *tmp = NULL;
+	unsigned int sbytes = sizeof(struct student);
+	int read_count = 0;
+
+	int fd = open(file, O_RDWR, 000666 );
+	if (fd < 0) {
+		printf("error: failed opening data file (%s): %i (%s)\n",
+				file, errno, strerror(errno));
+		err = fd;
+		goto exit;
+	}
+
+	data = (struct student *)malloc(sbytes);
+	if (!data) {
+		printf("error: failed to allocate %d bytes\n", sbytes);
+		err = -1;
+		goto exit;
+	}
+
+	ssize_t bytes = 1;
+	ssize_t total_bytes = 0;
+
+	while (bytes > 0) {
+		bytes = read(fd, data, sbytes);
+		if (bytes == -1) {
+			printf("error: reading %s failed with: %d (%s)\n",
+					file, errno, strerror(errno));
+			err = bytes;
+			goto exit;
+		}
+
+		if (bytes == 0)
+			break;
+
+		if (bytes < sbytes) {
+			printf("error: read %ld out of %d bytes expected\n",
+					bytes, sbytes);
+			err = bytes;
+			goto exit;
+		}
+
+		read_count++;
+		total_bytes += bytes;
+
+		tmp = (struct student *)realloc(data, sbytes * (read_count + 1));
+		if (!tmp) {
+			printf("error: failed to allocate %d bytes\n",
+					sbytes * (read_count + 1));
+			err = -1;
+			goto exit;
+		}
+		data = tmp;
+	}
+
+	printf("read %ld bytes from %s\n", total_bytes, file);
+	close(fd);
+	return read_count;
+
+exit:
+	if (fd > 0)
+		close(fd);
+	return err;
+}
+
 int main()
 {
 	int err = 0;
@@ -97,8 +164,15 @@ int main()
 
 	err = data_save(file, s, count);
 
+	struct student *data = NULL;
+	int read_count = 0;
+	read_count = data_read(file, data);
+	printf("read %d student records from %s\n", read_count, file);
+
 exit:
 	free(s);
+	if (data)
+		free(data);
 
 	return err;
 }
