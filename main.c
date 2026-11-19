@@ -1,7 +1,11 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <errno.h>
+#include <string.h>
+#include <fcntl.h>
+#include <unistd.h>
 
-struct student {
+struct __attribute__((__packed__)) student {
 	char name[20];
 	char last_name[20];
 	unsigned int course;
@@ -46,7 +50,9 @@ void data_show(struct student *data, int count)
 
 int main()
 {
+	int err = 0;
 	int count = 0;
+	char *file = "data.bin";
 	struct student *s = NULL;
 
 	printf("Please give a number of students you want to enter > ");
@@ -61,7 +67,26 @@ int main()
 	data_input(s, count);
 	data_show(s, count);
 
-	free(s);
+	int fd = open(file, O_CREAT | O_TRUNC | O_RDWR, 000666 );
+	if (fd < 0) {
+		printf("error opening data file (%s): %i (%s)\n",
+				file, errno, strerror(errno));
+		err = fd;
+		goto exit;
+	}
 
-	return 0;
+	ssize_t bytes = write(fd, s, sizeof(struct student) * count);
+	if (bytes < 0) {
+		printf("error writing to file (%s): %i (%s)\n",
+				file, errno, strerror(errno));
+		err = bytes;
+		goto exit;
+	}
+
+exit:
+	free(s);
+	if (fd > 0)
+		close(fd);
+
+	return err;
 }
